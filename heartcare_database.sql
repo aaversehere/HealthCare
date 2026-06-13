@@ -81,10 +81,11 @@ CREATE TABLE IF NOT EXISTS public.medication_logs (
   scheduled_time  TEXT        NOT NULL,
   taken           BOOLEAN     DEFAULT FALSE,
   taken_at        TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-
-  UNIQUE (medication_id, log_date, scheduled_time)
+  created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.medication_logs
+  DROP CONSTRAINT IF EXISTS medication_logs_medication_id_log_date_scheduled_time_key;
 
 
 -- ============================================================

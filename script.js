@@ -1096,8 +1096,16 @@ async function saveMed() {
     times.push(t ? t.value : '08:00');
   }
 
+  let profileUid = uid;
+  try {
+    profileUid = await ensureCurrentUserProfile();
+  } catch (err) {
+    showToast('error', err.message || 'Gagal menyiapkan profil pengguna');
+    return;
+  }
+
   const { error } = await supabase.from('medications').insert({
-    user_id:   uid,
+    user_id:   profileUid,
     name,
     dose:      dose || null,
     frequency: freq,
@@ -1128,6 +1136,26 @@ async function deleteMed(id) {
 async function toggleMedTaken(medId, scheduledTime) {
   const uid   = getCurrentUserId();
   const today = todayStr();
+
+  if (!uid) return;
+
+  const { error } = await supabase.from('medication_logs').insert({
+    user_id:        uid,
+    medication_id:  medId,
+    log_date:       today,
+    scheduled_time: scheduledTime,
+    taken:          true,
+    taken_at:       new Date().toISOString(),
+  });
+
+  if (error) {
+    showToast('error', 'Gagal mencatat obat: ' + error.message);
+    return;
+  }
+
+  showToast('success', 'Riwayat minum obat ditambahkan');
+  renderMedChecklist();
+  return;
 
   // Cek apakah log sudah ada
   const { data: existing } = await supabase
@@ -1189,16 +1217,20 @@ async function renderMedChecklist() {
     .from('medication_logs').select('*').eq('user_id', uid).eq('log_date', today);
 
   const logMap = {};
-  logs?.forEach(l => { logMap[`${l.medication_id}_${l.scheduled_time}`] = l.taken; });
+  logs?.forEach(l => {
+    const key = `${l.medication_id}_${l.scheduled_time}`;
+    if (l.taken) logMap[key] = (logMap[key] || 0) + 1;
+  });
 
   let html = '';
   meds.forEach(med => {
     (med.times || []).forEach(time => {
       const key   = `${med.id}_${time}`;
-      const taken = logMap[key] || false;
+      const takenCount = logMap[key] || 0;
+      const taken = takenCount > 0;
       html += `
         <div class="checklist-item ${taken ? 'taken' : ''}">
-          <button class="check-toggle" onclick="toggleMedTaken('${med.id}', '${time}')" title="${taken ? 'Tandai belum' : 'Tandai diminum'}">
+          <button class="check-toggle" onclick="toggleMedTaken('${med.id}', '${time}')" title="Tambah riwayat minum obat">
             <i class="ph-fill ph-check"></i>
           </button>
           <div class="check-info">

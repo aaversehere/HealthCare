@@ -1,0 +1,2 @@
+ALTER TABLE public.medication_logs
+  DROP CONSTRAINT IF EXISTS medication_logs_medication_id_log_date_scheduled_time_key;
