@@ -1,0 +1,9 @@
+{
+  "name": "heart-care-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node --check script.js && node --check supabase.js && node --check service-worker.js",
+    "start": "node server.js"
+  }
+}

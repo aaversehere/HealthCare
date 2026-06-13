@@ -1,0 +1,22 @@
+# =============================================
+#  HEART CARE — .gitignore
+# =============================================
+
+# Supabase anon key boleh dipakai di frontend selama RLS aktif.
+# Jangan pernah commit service_role key atau file .env.
+
+# Environment variables (jika pakai Vite/Node di masa depan)
+.env
+.env.local
+.env.production
+.env.development
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node modules (jika suatu saat pakai npm)
+node_modules/
+dist/
