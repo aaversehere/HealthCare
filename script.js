@@ -676,6 +676,22 @@ function getCurrentUserId() {
   return _currentUser?.id || null;
 }
 
+async function ensureCurrentUserProfile() {
+  if (!_currentUser?.id) return null;
+
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({
+      id: _currentUser.id,
+      first_name: _currentUser.firstName || '',
+      last_name: _currentUser.lastName || '',
+      diagnosis: _currentUser.diagnosis || null,
+    }, { onConflict: 'id' });
+
+  if (error) throw new Error('Profil pengguna belum siap: ' + error.message);
+  return _currentUser.id;
+}
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -775,8 +791,16 @@ async function saveSymptom() {
   if (!selectedSeverity) { document.getElementById('sym-sev-err').textContent  = 'Pilih tingkat keparahan'; valid = false; }
   if (!valid || !uid) return;
 
+  let profileUid = uid;
+  try {
+    profileUid = await ensureCurrentUserProfile();
+  } catch (err) {
+    showToast('error', err.message || 'Gagal menyiapkan profil pengguna');
+    return;
+  }
+
   const { error } = await supabase.from('symptoms').insert({
-    user_id:      uid,
+    user_id:      profileUid,
     symptom_type: type,
     severity:     selectedSeverity,
     recorded_at:  datetime ? new Date(datetime).toISOString() : new Date().toISOString(),
@@ -786,8 +810,8 @@ async function saveSymptom() {
   if (error) { showToast('error', 'Gagal menyimpan: ' + error.message); return; }
 
   toggleSymForm(false);
-  renderSymptoms();
-  updateHomeSummary();
+  await renderSymptoms();
+  await updateHomeSummary();
   showToast('success', 'Gejala berhasil dicatat!');
 }
 
@@ -814,9 +838,19 @@ async function renderSymptoms() {
     .from('symptoms').select('*').eq('user_id', uid)
     .order('recorded_at', { ascending: false });
 
-  if (error || !data?.length) {
+  if (error) {
     list.innerHTML = '';
     empty.classList.remove('hidden');
+    empty.querySelector('p').textContent = 'Gagal memuat catatan gejala';
+    empty.querySelector('small').textContent = error.message;
+    return;
+  }
+
+  if (!data?.length) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    empty.querySelector('p').textContent = 'Belum ada catatan gejala';
+    empty.querySelector('small').textContent = 'Tekan "Tambah" untuk mulai mencatat';
     return;
   }
   empty.classList.add('hidden');
@@ -870,8 +904,16 @@ async function saveWeight() {
   else                  { document.getElementById('weight-val-err').textContent = ''; }
   if (!valid || !uid) return;
 
+  let profileUid = uid;
+  try {
+    profileUid = await ensureCurrentUserProfile();
+  } catch (err) {
+    showToast('error', err.message || 'Gagal menyiapkan profil pengguna');
+    return;
+  }
+
   const { error } = await supabase.from('weight_records').insert({
-    user_id:       uid,
+    user_id:       profileUid,
     weight_kg:     val,
     recorded_date: date,
     notes:         note || null,
@@ -880,8 +922,8 @@ async function saveWeight() {
   if (error) { showToast('error', 'Gagal menyimpan: ' + error.message); return; }
 
   toggleWeightForm(false);
-  renderWeights();
-  updateHomeSummary();
+  await renderWeights();
+  await updateHomeSummary();
   showToast('success', `Berat badan ${val} kg berhasil dicatat!`);
 }
 
@@ -957,9 +999,19 @@ async function renderWeights() {
 
   checkWeightAlert('weight-alert', 'weight-alert-msg');
 
-  if (error || !data?.length) {
+  if (error) {
     list.innerHTML = '';
     empty.classList.remove('hidden');
+    empty.querySelector('p').textContent = 'Gagal memuat data berat badan';
+    empty.querySelector('small').textContent = error.message;
+    return;
+  }
+
+  if (!data?.length) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    empty.querySelector('p').textContent = 'Belum ada data berat badan';
+    empty.querySelector('small').textContent = 'Tekan "Tambah" untuk mulai mencatat';
     return;
   }
   empty.classList.add('hidden');

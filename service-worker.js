@@ -1,4 +1,4 @@
-const CACHE_NAME = 'heart-care-v1';
+const CACHE_NAME = 'heart-care-v2';
 const APP_SHELL = [
   './',
   './index.html',
