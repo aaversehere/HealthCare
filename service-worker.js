@@ -1,9 +1,9 @@
-const CACHE_NAME = 'heart-care-v2';
+const CACHE_NAME = 'heart-care-v3';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
-  './script.js',
+  './script.js?v=20260613-2',
   './supabase.js',
   './manifest.webmanifest',
   './icons/icon-192.png',

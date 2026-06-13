@@ -661,7 +661,7 @@
                     <p class="page-subtitle">Rekam gejala yang Anda rasakan</p>
                   </div>
                 </div>
-                <button class="btn btn-primary btn-sm" onclick="toggleSymForm(true)"><i class="ph ph-plus"></i> Tambah</button>
+                <button class="btn btn-primary btn-sm" id="btn-open-sym-form" type="button"><i class="ph ph-plus"></i> Tambah</button>
               </div>
 
               <div class="feature-form hidden" id="sym-form">
@@ -710,8 +710,8 @@
                   <textarea id="sym-notes" class="form-input form-textarea" placeholder="Deskripsikan lebih lanjut..."></textarea>
                 </div>
                 <div class="form-btn-row">
-                  <button class="btn btn-ghost" onclick="toggleSymForm(false)">Batal</button>
-                  <button class="btn btn-primary" onclick="saveSymptom()"><i class="ph ph-floppy-disk"></i> Simpan</button>
+                  <button class="btn btn-ghost" id="btn-cancel-sym-form" type="button">Batal</button>
+                  <button class="btn btn-primary" id="btn-save-symptom" type="button"><i class="ph ph-floppy-disk"></i> Simpan</button>
                 </div>
               </div>
 
@@ -949,6 +949,6 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=20260613-2"></script>
 </body>
 </html>

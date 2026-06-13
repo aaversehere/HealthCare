@@ -605,6 +605,8 @@ function handleDesktopSidebar() {
 window.addEventListener('resize', handleDesktopSidebar);
 
 document.addEventListener('DOMContentLoaded', async () => {
+  bindSymptomControls();
+
   // Test koneksi Supabase saat halaman load
   console.log('🔌 [Supabase] Menghubungkan ke:', typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : 'URL tidak ditemukan!');
   try {
@@ -666,6 +668,16 @@ function setBottomNav(bnavId) {
     if (icon && !icon.className.includes('ph-fill'))
       icon.className = icon.className.replace('ph ', 'ph-fill ');
   }
+}
+
+function bindSymptomControls() {
+  const openBtn = document.getElementById('btn-open-sym-form');
+  const cancelBtn = document.getElementById('btn-cancel-sym-form');
+  const saveBtn = document.getElementById('btn-save-symptom');
+
+  if (openBtn) openBtn.addEventListener('click', () => toggleSymForm(true));
+  if (cancelBtn) cancelBtn.addEventListener('click', () => toggleSymForm(false));
+  if (saveBtn) saveBtn.addEventListener('click', () => saveSymptom());
 }
 
 /* ================================================================== */
@@ -799,18 +811,18 @@ async function saveSymptom() {
     return;
   }
 
-  const { error } = await supabase.from('symptoms').insert({
+  const { data: savedSymptom, error } = await supabase.from('symptoms').insert({
     user_id:      profileUid,
     symptom_type: type,
     severity:     selectedSeverity,
     recorded_at:  datetime ? new Date(datetime).toISOString() : new Date().toISOString(),
     notes:        notes || null,
-  });
+  }).select('*').single();
 
   if (error) { showToast('error', 'Gagal menyimpan: ' + error.message); return; }
 
   toggleSymForm(false);
-  await renderSymptoms();
+  await renderSymptoms(savedSymptom ? [savedSymptom] : []);
   await updateHomeSummary();
   showToast('success', 'Gejala berhasil dicatat!');
 }
@@ -826,7 +838,7 @@ async function deleteSymptom(id) {
 
 const sevLabels = ['', 'Ringan', 'Hampir Ringan', 'Sedang', 'Cukup Berat', 'Berat'];
 
-async function renderSymptoms() {
+async function renderSymptoms(fallbackRows = []) {
   const uid   = getCurrentUserId();
   const list  = document.getElementById('sym-list');
   const empty = document.getElementById('sym-empty');
@@ -838,7 +850,7 @@ async function renderSymptoms() {
     .from('symptoms').select('*').eq('user_id', uid)
     .order('recorded_at', { ascending: false });
 
-  if (error) {
+  if (error && !fallbackRows.length) {
     list.innerHTML = '';
     empty.classList.remove('hidden');
     empty.querySelector('p').textContent = 'Gagal memuat catatan gejala';
@@ -846,7 +858,9 @@ async function renderSymptoms() {
     return;
   }
 
-  if (!data?.length) {
+  const rows = data?.length ? data : fallbackRows;
+
+  if (!rows?.length) {
     list.innerHTML = '';
     empty.classList.remove('hidden');
     empty.querySelector('p').textContent = 'Belum ada catatan gejala';
@@ -855,7 +869,7 @@ async function renderSymptoms() {
   }
   empty.classList.add('hidden');
 
-  list.innerHTML = data.map(s => `
+  list.innerHTML = rows.map(s => `
     <div class="record-item">
       <div class="record-icon icon-red"><i class="ph-fill ph-activity"></i></div>
       <div class="record-body">
